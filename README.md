@@ -9,6 +9,73 @@ role runs you get two facts:
 A consumer (nginx, haproxy, ...) only ever references those two facts. That is
 the whole point: the consumer does not care how the cert was produced.
 
+## Install
+
+The role lives in its own repo and is consumed via `requirements.yml` — don't copy it into your project.
+
+In your Ansible project, create (or extend) `requirements.yml`:
+
+```yaml
+---
+roles:
+  - name: cert
+    src: git+https://github.com/TonySD/ansible-role-cert.git
+    version: main          # pin to a tag once released, e.g. v1.0.0
+collections:
+  - name: community.crypto # required for self_signed mode
+```
+
+Make sure your `ansible.cfg` points to a local roles path:
+
+```ini
+[defaults]
+roles_path = roles
+collections_path = collections
+```
+
+Install both the role and its collection dependency:
+
+```bash
+ansible-galaxy install -r requirements.yml
+```
+
+Add the install targets to `.gitignore` (don't vendor them):
+
+```
+roles/
+collections/
+```
+
+Use it in a play — referenced simply as `cert`:
+
+```yaml
+- hosts: web
+  roles:
+    - role: cert
+      vars:
+        cert_mode: self_signed
+        cert_domains: ["app.example.com"]
+```
+
+### Updating
+
+Bump `version:` in `requirements.yml`, then force a re-install (Galaxy won't
+overwrite an existing role otherwise):
+
+```bash
+ansible-galaxy install -r requirements.yml --force
+```
+
+### Quick one-off install (no requirements file)
+
+```bash
+ansible-galaxy role install git+https://github.com/TonySD/ansible-role-cert.git
+```
+
+Note: this names the directory after the repo (`ansible-role-cert`), so reference
+it as `- role: ansible-role-cert`. Use the `requirements.yml` method above to get
+the shorter `cert` name.
+
 ## Modes
 
 ### self_signed
