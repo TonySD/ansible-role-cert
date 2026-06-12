@@ -1,0 +1,51 @@
+---
+# =============================================================================
+# certificate role defaults
+# =============================================================================
+
+# Mode selector. One of: "self_signed", "static", "letsencrypt".
+cert_mode: self_signed
+
+# Domains (SAN list). First entry is the CN and the default cert name.
+# Required for self_signed and letsencrypt.
+cert_domains: []
+
+# Logical name. Used for filenames (self_signed/static) and as certbot
+# --cert-name (letsencrypt), which keeps the live/ dir stable across renewals.
+cert_name: "{{ cert_domains | first | default('localhost') }}"
+
+# --- Output contract -------------------------------------------------------
+# These two facts are the ONLY thing a caller (nginx, haproxy, ...) should
+# reference. Every mode sets them to the real on-disk location at the end.
+cert_dir: /etc/ssl/local
+cert_cert_path: "{{ cert_dir }}/{{ cert_name }}.crt"
+cert_key_path: "{{ cert_dir }}/{{ cert_name }}.key"
+
+# --- File ownership / permissions ------------------------------------------
+cert_owner: root
+cert_group: root
+cert_key_mode: "0600"
+cert_cert_mode: "0644"
+
+# --- self_signed -----------------------------------------------------------
+cert_self_signed_days: 3650
+cert_key_type: RSA
+cert_key_size: 2048
+
+# --- static ----------------------------------------------------------------
+# Provide each artifact via *_src (file on the controller) OR *_content (inline
+# string, e.g. from vault). Exactly one of the two per artifact.
+cert_static_cert_src: ""
+cert_static_key_src: ""
+cert_static_cert_content: ""
+cert_static_key_content: ""
+
+# --- letsencrypt (certbot, webroot/HTTP-01) --------------------------------
+cert_le_email: ""
+cert_le_webroot: /var/www/letsencrypt
+cert_le_staging: false          # use the staging CA while testing (no rate limit)
+cert_le_key_type: rsa           # rsa | ecdsa
+cert_le_rsa_key_size: 2048
+# Reload command run by certbot's deploy-hook after every successful renewal.
+# Empty string disables the hook (caller handles reloads itself).
+cert_le_deploy_hook: ""         # e.g. "systemctl reload nginx"

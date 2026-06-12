@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: cert
+  author: tonysd
+  description: Issue or install a TLS certificate (self-signed / static / Let's Encrypt)
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions: [bullseye, bookworm]
+    - name: Ubuntu
+      versions: [jammy, noble]
+  galaxy_tags:
+    - tls
+    - certificate
+    - letsencrypt
+    - certbot
+
+# community.crypto is required for self_signed mode (openssl_* / x509_certificate).
+collections:
+  - community.crypto
+
+dependencies: []

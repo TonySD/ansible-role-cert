@@ -1,0 +1,12 @@
+---
+- name: Validate cert_mode
+  ansible.builtin.assert:
+    that:
+      - cert_mode in ['self_signed', 'static', 'letsencrypt']
+    fail_msg: >-
+      cert_mode must be one of: self_signed, static, letsencrypt
+      (got '{{ cert_mode }}')
+    quiet: true
+
+- name: Run mode-specific tasks
+  ansible.builtin.include_tasks: "{{ cert_mode }}.yml"

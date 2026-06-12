@@ -1,0 +1,56 @@
+---
+- name: Validate letsencrypt inputs
+  ansible.builtin.assert:
+    that:
+      - cert_domains | length > 0
+      - cert_le_email | length > 0
+    fail_msg: "letsencrypt mode requires cert_domains and cert_le_email"
+    quiet: true
+
+- name: Install certbot
+  ansible.builtin.package:
+    name: certbot
+    state: present
+
+- name: Ensure ACME webroot exists
+  ansible.builtin.file:
+    path: "{{ cert_le_webroot }}"
+    state: directory
+    owner: "{{ cert_owner }}"
+    group: "{{ cert_group }}"
+    mode: "0755"
+
+# NOTE: the web server must already be serving {{ cert_le_webroot }} on :80 at
+# /.well-known/acme-challenge/ BEFORE this runs. See README "Ordering".
+- name: Obtain certificate (webroot HTTP-01)
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --non-interactive --agree-tos
+      --webroot --webroot-path {{ cert_le_webroot }}
+      --email {{ cert_le_email }}
+      --cert-name {{ cert_name }}
+      --key-type {{ cert_le_key_type }}
+      {{ ('--rsa-key-size ' + (cert_le_rsa_key_size | string))
+         if cert_le_key_type == 'rsa' else '' }}
+      {{ '--staging' if cert_le_staging else '' }}
+      {{ ('--deploy-hook "' + cert_le_deploy_hook + '"')
+         if (cert_le_deploy_hook | length > 0) else '' }}
+      {{ cert_domains | map('regex_replace', '^', '-d ') | join(' ') }}
+  # Only issues on first run; certbot.timer handles renewals afterwards.
+  # When it does run, it always changes state, hence changed_when: true.
+  args:
+    creates: "/etc/letsencrypt/live/{{ cert_name }}/fullchain.pem"
+  changed_when: true
+
+- name: Ensure certbot renewal timer is enabled
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: true
+    state: started
+  # Unit name differs on snap-based installs; do not fail the whole play.
+  failed_when: false
+
+- name: Export normalized cert paths (Let's Encrypt live dir)
+  ansible.builtin.set_fact:
+    cert_cert_path: "/etc/letsencrypt/live/{{ cert_name }}/fullchain.pem"
+    cert_key_path: "/etc/letsencrypt/live/{{ cert_name }}/privkey.pem"

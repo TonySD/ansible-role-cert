@@ -1,0 +1,45 @@
+---
+argument_specs:
+  main:
+    short_description: Issue or install a TLS certificate
+    description:
+      - >-
+        Produces a certificate via one of three modes and exposes its on-disk
+        location through the facts cert_cert_path and cert_key_path.
+    options:
+      cert_mode:
+        type: str
+        choices: [self_signed, static, letsencrypt]
+        default: self_signed
+        description: Which issuance strategy to use.
+      cert_domains:
+        type: list
+        elements: str
+        description: SAN list; first entry is the CN. Required for self_signed and letsencrypt.
+      cert_name:
+        type: str
+        description: Logical cert name (filenames / certbot --cert-name).
+      cert_dir:
+        type: str
+        description: Directory for self_signed and static artifacts.
+      cert_cert_path:
+        type: str
+        description: Output fact - final certificate path.
+      cert_key_path:
+        type: str
+        description: Output fact - final private key path.
+      cert_self_signed_days:
+        type: int
+        description: Validity in days for self_signed mode.
+      cert_le_email:
+        type: str
+        description: ACME account email. Required for letsencrypt.
+      cert_le_webroot:
+        type: str
+        description: Webroot path served on :80 for the HTTP-01 challenge.
+      cert_le_staging:
+        type: bool
+        description: Use the Let's Encrypt staging CA (no rate limits) while testing.
+      cert_le_deploy_hook:
+        type: str
+        description: Shell command certbot runs after each successful renewal.

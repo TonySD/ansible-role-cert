@@ -1,0 +1,51 @@
+---
+- name: Validate self_signed inputs
+  ansible.builtin.assert:
+    that:
+      - cert_domains | length > 0
+    fail_msg: "self_signed mode requires cert_domains to be set"
+    quiet: true
+
+- name: Ensure certificate directory exists
+  ansible.builtin.file:
+    path: "{{ cert_dir }}"
+    state: directory
+    owner: "{{ cert_owner }}"
+    group: "{{ cert_group }}"
+    mode: "0755"
+
+- name: Generate private key
+  community.crypto.openssl_privatekey:
+    path: "{{ cert_key_path }}"
+    type: "{{ cert_key_type }}"
+    size: "{{ cert_key_size }}"
+    owner: "{{ cert_owner }}"
+    group: "{{ cert_group }}"
+    mode: "{{ cert_key_mode }}"
+
+- name: Build CSR in memory
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ cert_key_path }}"
+    common_name: "{{ cert_name }}"
+    subject_alt_name: "{{ cert_domains | map('regex_replace', '^', 'DNS:') | list }}"
+  register: _cert_csr
+  changed_when: false   # in-memory only; never touches disk
+
+- name: Generate self-signed certificate
+  community.crypto.x509_certificate:
+    path: "{{ cert_cert_path }}"
+    csr_content: "{{ _cert_csr.csr }}"
+    privatekey_path: "{{ cert_key_path }}"
+    provider: selfsigned
+    selfsigned_not_after: "+{{ cert_self_signed_days }}d"
+    # ignore_timestamps defaults to true for the selfsigned provider, so a
+    # relative not_after does NOT cause regeneration on every run.
+    owner: "{{ cert_owner }}"
+    group: "{{ cert_group }}"
+    mode: "{{ cert_cert_mode }}"
+
+# Paths already match the defaults; set explicitly so the contract is uniform.
+- name: Export normalized cert paths
+  ansible.builtin.set_fact:
+    cert_cert_path: "{{ cert_cert_path }}"
+    cert_key_path: "{{ cert_key_path }}"

@@ -1,0 +1,4 @@
+---
+# This role intentionally ships no handlers. Reloading the consumer service
+# (nginx, haproxy, ...) is the caller's responsibility, so the role stays
+# decoupled and reusable. See README.
