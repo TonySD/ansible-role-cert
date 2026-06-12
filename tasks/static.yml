@@ -1,59 +1,60 @@
 ---
 - name: Validate static inputs
   ansible.builtin.assert:
-    that:
-      - (cert_static_cert_src | length > 0) or (cert_static_cert_content | length > 0)
-      - (cert_static_key_src | length > 0) or (cert_static_key_content | length > 0)
-    fail_msg: >-
-      static mode requires a certificate and a key, each via *_src
-      (controller file) or *_content (inline string)
-    quiet: true
+      that:
+          - (cert_static_cert_src | length > 0) or (cert_static_cert_content | length > 0)
+          - (cert_static_key_src | length > 0) or (cert_static_key_content | length > 0)
+      fail_msg: >-
+          static mode requires a certificate and a key, each via *_src
+          (controller file) or *_content (inline string)
+      quiet: true
 
 - name: Ensure certificate directory exists
   ansible.builtin.file:
-    path: "{{ cert_dir }}"
-    state: directory
-    owner: "{{ cert_owner }}"
-    group: "{{ cert_group }}"
-    mode: "0755"
+      path: "{{ cert_dir }}"
+      state: directory
+      owner: "{{ cert_owner }}"
+      group: "{{ cert_group }}"
+      mode: "0755"
 
 - name: Install certificate from controller file
   ansible.builtin.copy:
-    src: "{{ cert_static_cert_src }}"
-    dest: "{{ cert_cert_path }}"
-    owner: "{{ cert_owner }}"
-    group: "{{ cert_group }}"
-    mode: "{{ cert_cert_mode }}"
+      src: "{{ cert_static_cert_src }}"
+      dest: "{{ cert_cert_path }}"
+      owner: "{{ cert_owner }}"
+      group: "{{ cert_group }}"
+      mode: "{{ cert_cert_mode }}"
   when: cert_static_cert_src | length > 0
 
 - name: Install certificate from inline content
   ansible.builtin.copy:
-    content: "{{ cert_static_cert_content }}"
-    dest: "{{ cert_cert_path }}"
-    owner: "{{ cert_owner }}"
-    group: "{{ cert_group }}"
-    mode: "{{ cert_cert_mode }}"
+      content: "{{ cert_static_cert_content }}"
+      dest: "{{ cert_cert_path }}"
+      owner: "{{ cert_owner }}"
+      group: "{{ cert_group }}"
+      mode: "{{ cert_cert_mode }}"
   when: cert_static_cert_content | length > 0
 
 - name: Install key from controller file
   ansible.builtin.copy:
-    src: "{{ cert_static_key_src }}"
-    dest: "{{ cert_key_path }}"
-    owner: "{{ cert_owner }}"
-    group: "{{ cert_group }}"
-    mode: "{{ cert_key_mode }}"
+      src: "{{ cert_static_key_src }}"
+      dest: "{{ cert_key_path }}"
+      owner: "{{ cert_owner }}"
+      group: "{{ cert_group }}"
+      mode: "{{ cert_key_mode }}"
   when: cert_static_key_src | length > 0
 
 - name: Install key from inline content
   ansible.builtin.copy:
-    content: "{{ cert_static_key_content }}"
-    dest: "{{ cert_key_path }}"
-    owner: "{{ cert_owner }}"
-    group: "{{ cert_group }}"
-    mode: "{{ cert_key_mode }}"
+      content: "{{ cert_static_key_content }}"
+      dest: "{{ cert_key_path }}"
+      owner: "{{ cert_owner }}"
+      group: "{{ cert_group }}"
+      mode: "{{ cert_key_mode }}"
   when: cert_static_key_content | length > 0
+  no_log: true
 
 - name: Export normalized cert paths
   ansible.builtin.set_fact:
-    cert_cert_path: "{{ cert_cert_path }}"
-    cert_key_path: "{{ cert_key_path }}"
+      cert_cert_path: "{{ cert_cert_path }}"
+      cert_key_path: "{{ cert_key_path }}"
