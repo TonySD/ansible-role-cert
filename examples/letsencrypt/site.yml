@@ -1,0 +1,45 @@
+- name: Base configuration for all servers
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+      - name: "Install nginx"
+        apt:
+            name: nginx
+            state: present
+            update_cache: true
+            cache_valid_time: 3600
+        become: true
+
+      - name: Ensure ACME webroot exists
+        ansible.builtin.file:
+            path: /var/www/acme
+            state: directory
+            owner: www-data
+            group: www-data
+            mode: "0755"
+
+      - name: "Render acme-challenge.conf"
+        ansible.builtin.template:
+            src: acme-challenge.conf.j2
+            dest: /etc/nginx/sites-enabled/acme-challenge.conf
+            owner: root
+            group: root
+            mode: "0644"
+
+      - name: Reload nginx
+        ansible.builtin.systemd:
+            name: nginx
+            state: reloaded
+
+      - name: Issue certificate
+        ansible.builtin.include_role:
+            name: cert
+        vars:
+            cert_mode: letsencrypt
+            cert_domains: "{{ domains }}"
+            cert_le_email: "admin@gmail.com"
+            cert_le_webroot: /var/www/certbot
+            cert_le_staging: true
+            cert_le_deploy_hook: "systemctl reload nginx"

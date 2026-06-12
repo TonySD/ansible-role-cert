@@ -1,0 +1,7 @@
+---
+roles:
+    - name: cert
+      src: git+https://github.com/TonySD/ansible-role-cert.git
+      version: f31eaa9d359c46080b635a0b7cb46bd31039f63e
+collections:
+    - name: community.crypto
